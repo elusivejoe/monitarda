@@ -2,48 +2,22 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-	"sync"
+	"monitarda/polling"
 	"time"
 )
 
 func main() {
-	readSmart()
-	runMonitoring(10 * time.Second)
-	runServer()
-}
+	var task1 = polling.CreateTask(polling.Once, time.Second*10)
+	var task2 = polling.CreateTask(polling.Infinite, time.Minute)
 
-var mutSmart sync.Mutex
-var resultSmart string
+	fmt.Println(task1)
+	fmt.Println(task2)
 
-func handlerSmart(out http.ResponseWriter, request *http.Request) {
-	mutSmart.Lock()
-	defer mutSmart.Unlock()
+	var poller = polling.CreatePoller()
 
-	fmt.Fprintf(out, "Smart: %s", resultSmart)
-}
+	var descriptor1 = poller.Poll(task1)
+	var descriptor2 = poller.Poll(task2)
 
-func readSmart() {
-	mutSmart.Lock()
-	defer mutSmart.Unlock()
-
-	resultSmart = time.Now().String()
-}
-
-func runMonitoring(interval time.Duration) {
-	tickChan := time.Tick(interval)
-
-	go func() {
-		for {
-			<-tickChan
-			readSmart()
-		}
-	}()
-}
-
-func runServer() {
-	http.HandleFunc("/smart", handlerSmart)
-
-	log.Fatal(http.ListenAndServe("localhost:9090", nil))
+	fmt.Printf("%d %s\n", descriptor1.TaskId(), descriptor1.TaskString())
+	fmt.Printf("%d %s\n", descriptor2.TaskId(), descriptor2.TaskString())
 }
