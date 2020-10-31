@@ -1,6 +1,9 @@
 package polling
 
-import "sync"
+import (
+	"monitarda/tasks"
+	"sync"
+)
 
 type TaskDescriptor struct {
 	taskId     uint64
@@ -18,7 +21,7 @@ func generateId() uint64 {
 	return taskId
 }
 
-func createDescriptor(t Task) TaskDescriptor {
+func newDescriptor(t tasks.Task) TaskDescriptor {
 	return TaskDescriptor{taskId: generateId(), taskString: t.String()}
 }
 

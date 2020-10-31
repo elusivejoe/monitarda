@@ -1,23 +1,23 @@
 package main
 
 import (
-	"fmt"
 	"monitarda/polling"
+	"monitarda/tasks"
 	"time"
 )
 
 func main() {
-	var task1 = polling.CreateTask(polling.Once, time.Second*10)
-	var task2 = polling.CreateTask(polling.Infinite, time.Minute)
+	var poller = polling.NewPoller()
 
-	fmt.Println(task1)
-	fmt.Println(task2)
+	poller.Poll(tasks.NewGenericTask(tasks.Once, time.Second*7))
+	var task2 = poller.Poll(tasks.NewGenericTask(tasks.Infinite, time.Second*1))
 
-	var poller = polling.CreatePoller()
+	timer := time.NewTimer(time.Second * 5)
 
-	var descriptor1 = poller.Poll(task1)
-	var descriptor2 = poller.Poll(task2)
+	go func() {
+		<-timer.C
+		poller.Unpoll(task2.TaskId())
+	}()
 
-	fmt.Printf("%d %s\n", descriptor1.TaskId(), descriptor1.TaskString())
-	fmt.Printf("%d %s\n", descriptor2.TaskId(), descriptor2.TaskString())
+	poller.WaitAllTasks()
 }
