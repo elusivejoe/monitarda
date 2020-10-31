@@ -10,7 +10,6 @@ import (
 type polledTask struct {
 	task       tasks.Task
 	descriptor TaskDescriptor
-	ticker     *time.Ticker
 	stopper    chan bool
 }
 
@@ -25,50 +24,43 @@ func NewPoller() *Poller {
 
 var pollMutex sync.Mutex
 
-func (p *Poller) Poll(t tasks.Task) TaskDescriptor {
+func (p *Poller) Poll(task tasks.Task) TaskDescriptor {
 	pollMutex.Lock()
 	defer pollMutex.Unlock()
 
-	p.waitGroup.Add(1)
-
-	var descriptor = newDescriptor(t)
-
-	ticker := time.NewTicker(t.Interval())
+	descriptor := newDescriptor(task)
 	stopper := make(chan bool)
 
-	p.runRoutine(t, ticker, stopper, descriptor)
-
-	p.tasks[descriptor.taskId] = &polledTask{
-		task:       t,
-		descriptor: descriptor,
-		ticker:     ticker,
-		stopper:    stopper}
+	p.runRoutine(task, stopper, descriptor)
+	p.tasks[descriptor.taskId] = &polledTask{task: task, descriptor: descriptor, stopper: stopper}
 
 	return descriptor
 }
 
-func (p *Poller) runRoutine(t tasks.Task, ticker *time.Ticker, stopper chan bool, descriptor TaskDescriptor) {
+func (p *Poller) runRoutine(t tasks.Task, stopper chan bool, descriptor TaskDescriptor) {
+	p.waitGroup.Add(1)
+
+	tickChannel := time.NewTicker(t.Interval()).C
+
 	go func() {
 	outerLoop:
 		for {
 			select {
-			case <-ticker.C:
-				{
-					t.Fire()
+			case <-tickChannel:
+				t.Fire()
 
-					if t.RepeatMode() == tasks.Once {
-						break outerLoop
-					}
-				}
-			case <-stopper:
-				{
+				if t.RepeatMode() == tasks.Once {
 					break outerLoop
 				}
+
+			case <-stopper:
+				break outerLoop
 			}
 		}
 
 		fmt.Printf("Task %d finished\n", descriptor.TaskId())
 
+		p.cleanUpTask(descriptor.TaskId())
 		p.waitGroup.Done()
 	}()
 }
@@ -77,19 +69,18 @@ func (p *Poller) Unpoll(id uint64) {
 	pollMutex.Lock()
 	defer pollMutex.Unlock()
 
-	p.tasks[id].ticker.Stop()
 	p.tasks[id].stopper <- true
+}
 
+func (p *Poller) cleanUpTask(id uint64) {
 	delete(p.tasks, id)
-
-	fmt.Printf("Task %d unpolled\n", id)
 }
 
 func (p *Poller) ListTasks() []TaskDescriptor {
 	pollMutex.Lock()
 	defer pollMutex.Unlock()
 
-	var allTasks []TaskDescriptor
+	var allTasks = make([]TaskDescriptor, len(p.tasks))
 
 	for _, v := range p.tasks {
 		allTasks = append(allTasks, v.descriptor)
@@ -98,6 +89,6 @@ func (p *Poller) ListTasks() []TaskDescriptor {
 	return allTasks
 }
 
-func (p *Poller) WaitAllTasks() {
+func (p *Poller) WaitAll() {
 	p.waitGroup.Wait()
 }

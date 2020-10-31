@@ -9,15 +9,15 @@ import (
 func main() {
 	var poller = polling.NewPoller()
 
-	poller.Poll(tasks.NewGenericTask(tasks.Once, time.Second*7))
-	var task2 = poller.Poll(tasks.NewGenericTask(tasks.Infinite, time.Second*1))
-
-	timer := time.NewTimer(time.Second * 5)
+	task1 := poller.Poll(tasks.NewGenericTask(tasks.Once, time.Second*7))
+	task2 := poller.Poll(tasks.NewGenericTask(tasks.Infinite, time.Second*1))
+	poller.Poll(tasks.NewGenericTask(tasks.Once, time.Second*10))
 
 	go func() {
-		<-timer.C
+		<-time.NewTimer(time.Second * 5).C
+		poller.Unpoll(task1.TaskId())
 		poller.Unpoll(task2.TaskId())
 	}()
 
-	poller.WaitAllTasks()
+	poller.WaitAll()
 }
