@@ -14,7 +14,7 @@ func main() {
 	poller.Poll(tasks.NewGenericTask(tasks.Once, time.Second*10))
 
 	go func() {
-		<-time.NewTimer(time.Second * 5).C
+		<-time.Tick(time.Second * 5)
 		poller.Unpoll(task1.TaskId())
 		poller.Unpoll(task2.TaskId())
 	}()

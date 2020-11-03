@@ -40,13 +40,13 @@ func (p *Poller) Poll(task tasks.Task) TaskDescriptor {
 func (p *Poller) runRoutine(t tasks.Task, stopper chan bool, descriptor TaskDescriptor) {
 	p.waitGroup.Add(1)
 
-	tickChannel := time.NewTicker(t.Interval()).C
+	ticker := time.NewTicker(t.Interval())
 
 	go func() {
 	outerLoop:
 		for {
 			select {
-			case <-tickChannel:
+			case <-ticker.C:
 				t.Fire()
 
 				if t.RepeatMode() == tasks.Once {
@@ -59,6 +59,8 @@ func (p *Poller) runRoutine(t tasks.Task, stopper chan bool, descriptor TaskDesc
 		}
 
 		fmt.Printf("Task %d finished\n", descriptor.TaskId())
+
+		ticker.Stop()
 
 		p.cleanUpTask(descriptor.TaskId())
 		p.waitGroup.Done()
