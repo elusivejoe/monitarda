@@ -16,4 +16,5 @@ type Task interface {
 	Interval() time.Duration
 	RepeatMode() Repeat
 	String() string
+	Channel() <-chan Result
 }

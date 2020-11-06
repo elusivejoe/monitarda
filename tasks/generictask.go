@@ -8,10 +8,11 @@ import (
 type GenericTask struct {
 	repeat   Repeat
 	interval time.Duration
+	channel  chan Result
 }
 
 func NewGenericTask(repeat Repeat, interval time.Duration) *GenericTask {
-	return &GenericTask{repeat: repeat, interval: interval}
+	return &GenericTask{repeat: repeat, interval: interval, channel: make(chan Result)}
 }
 
 func (t *GenericTask) RepeatMode() Repeat {
@@ -27,5 +28,9 @@ func (t *GenericTask) String() string {
 }
 
 func (t *GenericTask) Fire() {
-	fmt.Printf("Fired: %s\n", t)
+	t.channel <- Result{result: fmt.Sprintf("Fired: %s\n", t)}
+}
+
+func (t *GenericTask) Channel() <-chan Result {
+	return t.channel
 }
