@@ -12,23 +12,29 @@ func main() {
 	poller := polling.NewPoller()
 	storage := storage.NewStorage()
 
-	t1 := tasks.NewGenericTask(tasks.Once, time.Second*7)
-	t2 := tasks.NewGenericTask(tasks.Infinite, time.Second*1)
-	t3 := tasks.NewGenericTask(tasks.Once, time.Second*10)
+	t1 := tasks.NewGenericTask("Task 1")
+	t2 := tasks.NewGenericTask("Task 2")
+	t3 := tasks.NewGenericTask("Task 3")
 
-	storage.Register(fmtwriters.NewGenericWriter(t1.Channel()))
-	storage.Register(fmtwriters.NewGenericWriter(t2.Channel()))
-	storage.Register(fmtwriters.NewGenericWriter(t3.Channel()))
+	td1 := poller.Poll(t1, polling.Once, time.Second*10)
+	td2 := poller.Poll(t2, polling.Infinite, time.Second*1)
+	td3 := poller.Poll(t3, polling.Once, time.Second*15)
 
-	td1 := poller.Poll(t1)
-	td2 := poller.Poll(t2)
-	poller.Poll(t3)
+	storage.Register(fmtwriters.NewGenericWriter(td1.ResultsChan()))
+	wd2 := storage.Register(fmtwriters.NewGenericWriter(td2.ResultsChan()))
+	storage.Register(fmtwriters.NewGenericWriter(td3.ResultsChan()))
 
 	go func() {
 		<-time.Tick(time.Second * 5)
+		storage.Unregister(wd2.WriterId())
 		poller.Unpoll(td1.TaskId())
+	}()
+
+	go func() {
+		<-time.Tick(time.Second * 10)
 		poller.Unpoll(td2.TaskId())
 	}()
 
 	poller.WaitAll()
+	storage.WaitAll()
 }

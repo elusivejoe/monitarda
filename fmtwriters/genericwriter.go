@@ -19,6 +19,7 @@ func NewGenericWriter(inChan <-chan tasks.Result) *GenericWriter {
 
 			if !ok {
 				close(outChannel)
+				break
 			}
 
 			outChannel <- storage.NewResult("Formatted: " + res.Value())

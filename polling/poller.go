@@ -24,45 +24,61 @@ func NewPoller() *Poller {
 
 var pollMutex sync.Mutex
 
-func (p *Poller) Poll(task tasks.Task) TaskDescriptor {
+func (p *Poller) Poll(task tasks.Task, repeat Repeat, duration time.Duration) TaskDescriptor {
 	pollMutex.Lock()
 	defer pollMutex.Unlock()
 
-	descriptor := newDescriptor(task)
 	stopper := make(chan bool)
+	results := make(chan tasks.Result)
 
-	p.runRoutine(task, stopper, descriptor)
+	descriptor := newDescriptor(repeat, duration, results)
+
+	p.runRoutine(task, descriptor, stopper, results)
 	p.tasks[descriptor.taskId] = &polledTask{task: task, descriptor: descriptor, stopper: stopper}
 
 	return descriptor
 }
 
-func (p *Poller) runRoutine(t tasks.Task, stopper chan bool, descriptor TaskDescriptor) {
+func (p *Poller) runRoutine(t tasks.Task, descriptor TaskDescriptor, stopper chan bool, results chan tasks.Result) {
 	p.waitGroup.Add(1)
 
-	ticker := time.NewTicker(t.Interval())
+	ticker := time.NewTicker(descriptor.Duration())
 
 	go func() {
 	outerLoop:
 		for {
 			select {
 			case <-ticker.C:
-				t.Fire()
+				result, err := t.Fire()
 
-				if t.RepeatMode() == tasks.Once {
+				if err != nil {
+					fmt.Printf("Task %d returned an error: %s\n", descriptor.taskId, err)
 					break outerLoop
 				}
 
+				select {
+				case results <- result:
+					{
+					}
+				default:
+					{
+					}
+				}
+
+				if descriptor.Repeat() == Once {
+					break outerLoop
+				}
 			case <-stopper:
 				break outerLoop
 			}
 		}
 
-		fmt.Printf("Task %d finished\n", descriptor.TaskId())
+		fmt.Printf("Task %d finished\n", descriptor.taskId)
 
 		ticker.Stop()
+		close(results)
 
-		p.cleanUpTask(descriptor.TaskId())
+		p.cleanUpTask(descriptor.taskId)
 		p.waitGroup.Done()
 	}()
 }
@@ -71,7 +87,14 @@ func (p *Poller) Unpoll(id uint64) {
 	pollMutex.Lock()
 	defer pollMutex.Unlock()
 
-	p.tasks[id].stopper <- true
+	task, ok := p.tasks[id]
+
+	if !ok {
+		fmt.Printf("TaskId %d not found", id)
+		return
+	}
+
+	task.stopper <- true
 }
 
 func (p *Poller) cleanUpTask(id uint64) {
