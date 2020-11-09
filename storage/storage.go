@@ -38,7 +38,14 @@ func (s *Storage) Register(formatter formatters.Formatter, inputChan <-chan task
 						break outerLoop
 					}
 
-					fmt.Printf("Store results: %s", formatter.Format(result).Value())
+					result, err := formatter.Format(result)
+
+					if err != nil {
+						fmt.Printf("Failed to format result: %s", result.Value())
+						break outerLoop
+					}
+
+					fmt.Printf("Store results: %s\n", result.Value())
 				}
 			case <-stopper:
 				{

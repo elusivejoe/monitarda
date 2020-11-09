@@ -21,5 +21,5 @@ func (t *GenericTask) String() string {
 }
 
 func (t *GenericTask) Fire() (Result, error) {
-	return Result{value: fmt.Sprintf("Fired: %s\n", t)}, nil
+	return Result{value: fmt.Sprintf("Fired: %s", t)}, nil
 }

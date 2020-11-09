@@ -10,6 +10,6 @@ func NewGenericFormatter() *GenericFormatter {
 	return &GenericFormatter{}
 }
 
-func (gf *GenericFormatter) Format(taskResult tasks.Result) Result {
-	return Result{value: "Formatted: " + taskResult.Value()}
+func (gf *GenericFormatter) Format(taskResult tasks.Result) (Result, error) {
+	return Result{value: "Formatted: " + taskResult.Value()}, nil
 }
