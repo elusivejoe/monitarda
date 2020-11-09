@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-type WriterDescriptor struct {
+type FormatterDescriptor struct {
 	writerId uint64
 }
 
@@ -20,10 +20,10 @@ func generateId() uint64 {
 	return writerId
 }
 
-func newDescriptor() WriterDescriptor {
-	return WriterDescriptor{writerId: generateId()}
+func newDescriptor() FormatterDescriptor {
+	return FormatterDescriptor{writerId: generateId()}
 }
 
-func (wd WriterDescriptor) WriterId() uint64 {
+func (wd FormatterDescriptor) WriterId() uint64 {
 	return wd.writerId
 }

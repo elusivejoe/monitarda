@@ -1,4 +1,4 @@
-package tasks
+package formatters
 
 type Result struct {
 	value string

@@ -2,6 +2,8 @@ package storage
 
 import (
 	"fmt"
+	"monitarda/formatters"
+	"monitarda/tasks"
 	"sync"
 )
 
@@ -16,7 +18,7 @@ func NewStorage() *Storage {
 	return &Storage{stoppers: make(map[uint64]chan bool)}
 }
 
-func (s *Storage) Register(writer Writer) WriterDescriptor {
+func (s *Storage) Register(formatter formatters.Formatter, inputChan <-chan tasks.Result) FormatterDescriptor {
 	storageMutex.Lock()
 	defer storageMutex.Unlock()
 
@@ -30,13 +32,13 @@ func (s *Storage) Register(writer Writer) WriterDescriptor {
 	outerLoop:
 		for {
 			select {
-			case result, ok := <-writer.Channel():
+			case result, ok := <-inputChan:
 				{
 					if !ok {
 						break outerLoop
 					}
 
-					fmt.Printf("Store results: %s", result.Result())
+					fmt.Printf("Store results: %s", formatter.Format(result).Value())
 				}
 			case <-stopper:
 				{
@@ -45,7 +47,7 @@ func (s *Storage) Register(writer Writer) WriterDescriptor {
 			}
 		}
 
-		fmt.Printf("Writer %d has finished the job\n", descriptor.WriterId())
+		fmt.Printf("Formatter %d has finished the job\n", descriptor.WriterId())
 		delete(s.stoppers, descriptor.WriterId())
 		s.waitGroup.Done()
 	}()
