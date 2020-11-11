@@ -49,19 +49,13 @@ func (p *Poller) runRoutine(t tasks.Task, descriptor TaskDescriptor, stopper cha
 		for {
 			select {
 			case <-ticker.C:
-				result, err := t.Fire()
-
-				if err != nil {
+				if result, err := t.Fire(); err != nil {
 					fmt.Printf("Task %d returned an error: %s\n", descriptor.taskId, err)
 					break outerLoop
-				}
-
-				select {
-				case results <- result:
-					{
-					}
-				default:
-					{
+				} else {
+					select {
+					case results <- result:
+					default:
 					}
 				}
 
