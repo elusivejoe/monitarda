@@ -1,5 +1,7 @@
 package polling
 
+import "fmt"
+
 type Repeat uint8
 
 const (
@@ -16,6 +18,6 @@ func (r Repeat) String() string {
 		return "Infinite"
 
 	default:
-		return string(r)
+		return fmt.Sprintf("%d", r)
 	}
 }

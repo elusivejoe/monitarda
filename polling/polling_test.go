@@ -8,6 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRepeatString(t *testing.T) {
+	assert.Equal(t, "Once", Once.String())
+	assert.Equal(t, "Infinite", Infinite.String())
+	assert.Equal(t, "10", Repeat(10).String())
+}
+
 func TestTaskDescriptor(t *testing.T) {
 	poller := NewPoller()
 
@@ -28,6 +34,9 @@ func TestTaskDescriptor(t *testing.T) {
 
 	assert.Equal(t, time.Second*5, td1.Duration())
 	assert.Equal(t, time.Minute*10, td2.Duration())
+
+	assert.NotNil(t, td1.ResultsChan())
+	assert.NotNil(t, td2.ResultsChan())
 }
 
 func TestPollerLogic(t *testing.T) {
@@ -36,8 +45,8 @@ func TestPollerLogic(t *testing.T) {
 	t1 := tasks.NewGenericTask("Task 1")
 	t2 := tasks.NewGenericTask("Task 2")
 
-	td1 := poller.Poll(t1, Once, time.Second*3)
-	td2 := poller.Poll(t2, Infinite, time.Second*2)
+	td1 := poller.Poll(t1, Once, time.Second*2)
+	td2 := poller.Poll(t2, Infinite, time.Second*1)
 
 	t1Result := "No result"
 	t2Result := "No result"
@@ -45,8 +54,18 @@ func TestPollerLogic(t *testing.T) {
 	watchDog := make(chan bool)
 
 	go func() {
-		<-time.Tick(time.Second * 5)
+		<-time.Tick(time.Second * 6)
 		watchDog <- true
+	}()
+
+	go func() {
+		<-time.Tick(time.Second * 4)
+
+		tasks := poller.ListTasks()
+
+		for _, descriptor := range tasks {
+			poller.Unpoll(descriptor.TaskId())
+		}
 	}()
 
 outerLoop:
@@ -80,6 +99,8 @@ outerLoop:
 			}
 		}
 	}
+
+	poller.WaitAll()
 
 	assert.Equal(t, "Fired: Task 1", t1Result)
 	assert.Equal(t, "Fired: Task 2", t2Result)
