@@ -35,6 +35,7 @@ func (s *Storage) Register(formatter formatters.Formatter, inputChan <-chan task
 			case result, ok := <-inputChan:
 				{
 					if !ok {
+						fmt.Println("Input channel has been closed")
 						break outerLoop
 					}
 
@@ -45,7 +46,10 @@ func (s *Storage) Register(formatter formatters.Formatter, inputChan <-chan task
 						break outerLoop
 					}
 
-					fmt.Printf("Store results: %s\n", result.Value())
+					if err := s.storeResult(result); err != nil {
+						fmt.Printf("Failed to store result: %s", result.Value())
+						break outerLoop
+					}
 				}
 			case <-stopper:
 				{
@@ -60,6 +64,11 @@ func (s *Storage) Register(formatter formatters.Formatter, inputChan <-chan task
 	}()
 
 	return descriptor
+}
+
+func (s *Storage) storeResult(result formatters.Result) error {
+	fmt.Printf("Store: %s\n", result.Value())
+	return nil
 }
 
 func (s *Storage) Unregister(writerId uint64) {

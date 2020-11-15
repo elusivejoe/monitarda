@@ -84,7 +84,7 @@ func (p *Poller) Unpoll(id uint64) {
 	task, ok := p.tasks[id]
 
 	if !ok {
-		fmt.Printf("TaskId %d not found", id)
+		fmt.Printf("TaskId %d not found\n", id)
 		return
 	}
 
