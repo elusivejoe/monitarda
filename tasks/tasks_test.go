@@ -27,9 +27,9 @@ func TestFileTask(t *testing.T) {
 
 	result, err := task.Fire()
 	assert.Nil(t, err)
-	assert.Equal(t, "Personalities : [raid1] \n"+
-		"md0 : active raid1 sda[0] sdb[1]\n"+
-		"      13672250368 blocks super 1.2 [2/2] [UU]\n"+
-		"      bitmap: 0/102 pages [0KB], 65536KB chunk\n"+
-		"\nunused devices: <none>\n", result.Value())
+	assert.Equal(t, "Personalities : [raid1] \u000A"+
+		"md0 : active raid1 sda[0] sdb[1]\u000A"+
+		"      13672250368 blocks super 1.2 [2/2] [UU]\u000A"+
+		"      bitmap: 0/102 pages [0KB], 65536KB chunk\u000A"+
+		"\u000Aunused devices: <none>\u000A", result.Value())
 }
