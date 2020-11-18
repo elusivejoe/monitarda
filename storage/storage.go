@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"monitarda/formatters"
 	"monitarda/tasks"
 	"sync"
 )
@@ -18,7 +17,7 @@ func NewStorage() *Storage {
 	return &Storage{stoppers: make(map[uint64]chan bool)}
 }
 
-func (s *Storage) Register(formatter formatters.Formatter, inputChan <-chan tasks.Result) FormatterDescriptor {
+func (s *Storage) Register(inputChan <-chan tasks.Result) FormatterDescriptor {
 	storageMutex.Lock()
 	defer storageMutex.Unlock()
 
@@ -36,13 +35,6 @@ func (s *Storage) Register(formatter formatters.Formatter, inputChan <-chan task
 				{
 					if !ok {
 						fmt.Println("Input channel has been closed")
-						break outerLoop
-					}
-
-					result, err := formatter.Format(result)
-
-					if err != nil {
-						fmt.Printf("Failed to format result: %s", result.Value())
 						break outerLoop
 					}
 
@@ -66,7 +58,7 @@ func (s *Storage) Register(formatter formatters.Formatter, inputChan <-chan task
 	return descriptor
 }
 
-func (s *Storage) storeResult(result formatters.Result) error {
+func (s *Storage) storeResult(result tasks.Result) error {
 	fmt.Printf("Store: %s\n", result.Value())
 	return nil
 }

@@ -33,3 +33,11 @@ func TestFileTask(t *testing.T) {
 		"      bitmap: 0/102 pages [0KB], 65536KB chunk\n"+
 		"\nunused devices: <none>\n", result.Value())
 }
+
+func TestResult(t *testing.T) {
+	result := Result{"Test Value"}
+	assert.Equal(t, "Test Value", result.Value())
+
+	result.SetValue("New Test Value")
+	assert.Equal(t, "New Test Value", result.Value())
+}
