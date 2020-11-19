@@ -17,7 +17,7 @@ func NewStorage() *Storage {
 	return &Storage{stoppers: make(map[uint64]chan bool)}
 }
 
-func (s *Storage) Register(inputChan <-chan tasks.Result) FormatterDescriptor {
+func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 	storageMutex.Lock()
 	defer storageMutex.Unlock()
 
@@ -25,7 +25,7 @@ func (s *Storage) Register(inputChan <-chan tasks.Result) FormatterDescriptor {
 	descriptor := newDescriptor()
 
 	stopper := make(chan bool)
-	s.stoppers[descriptor.WriterId()] = stopper
+	s.stoppers[descriptor.InputId()] = stopper
 
 	go func() {
 	outerLoop:
@@ -50,8 +50,8 @@ func (s *Storage) Register(inputChan <-chan tasks.Result) FormatterDescriptor {
 			}
 		}
 
-		fmt.Printf("Formatter %d has finished the job\n", descriptor.WriterId())
-		delete(s.stoppers, descriptor.WriterId())
+		fmt.Printf("Input %d has finished the job\n", descriptor.InputId())
+		delete(s.stoppers, descriptor.InputId())
 		s.waitGroup.Done()
 	}()
 
@@ -63,19 +63,19 @@ func (s *Storage) storeResult(result tasks.Result) error {
 	return nil
 }
 
-func (s *Storage) Unregister(writerId uint64) {
+func (s *Storage) RemoveInput(inputId uint64) {
 	storageMutex.Lock()
 	defer storageMutex.Unlock()
 
-	stopper, ok := s.stoppers[writerId]
+	stopper, ok := s.stoppers[inputId]
 
 	if !ok {
-		fmt.Printf("WriterId %d not found", writerId)
+		fmt.Printf("InputId %d not found", inputId)
 		return
 	}
 
 	stopper <- true
-	delete(s.stoppers, writerId)
+	delete(s.stoppers, inputId)
 }
 
 func (s *Storage) WaitAll() {

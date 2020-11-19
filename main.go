@@ -17,8 +17,8 @@ func main() {
 	td1 := poller.Poll(t1, polling.Once, time.Second*5)
 	td2 := poller.Poll(t2, polling.Infinite, time.Second*2)
 
-	resultsStorage.Register(td1.ResultsChan())
-	resultsStorage.Register(td2.ResultsChan())
+	resultsStorage.AddInput(td1.ResultsChan())
+	resultsStorage.AddInput(td2.ResultsChan())
 
 	go func() {
 		<-time.Tick(time.Second * 7)
