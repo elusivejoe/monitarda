@@ -1,10 +1,11 @@
 package polling
 
 import (
-	"fmt"
 	"monitarda/tasks"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type polledTask struct {
@@ -50,7 +51,7 @@ func (p *Poller) runRoutine(t tasks.Task, descriptor TaskDescriptor, stopper cha
 			select {
 			case <-ticker.C:
 				if result, err := t.Fire(); err != nil {
-					fmt.Printf("Task %d returned an error: %s\n", descriptor.taskId, err)
+					log.Errorf("Task %d returned an error: %s", descriptor.taskId, err)
 					break outerLoop
 				} else {
 					select {
@@ -67,7 +68,7 @@ func (p *Poller) runRoutine(t tasks.Task, descriptor TaskDescriptor, stopper cha
 			}
 		}
 
-		fmt.Printf("Task %d finished\n", descriptor.taskId)
+		log.Infof("Task %d finished", descriptor.taskId)
 
 		ticker.Stop()
 		close(results)
@@ -84,7 +85,7 @@ func (p *Poller) Unpoll(id uint64) {
 	task, ok := p.tasks[id]
 
 	if !ok {
-		fmt.Printf("TaskId %d not found\n", id)
+		log.Warnf("TaskId %d not found", id)
 		return
 	}
 

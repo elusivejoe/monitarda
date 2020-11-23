@@ -1,9 +1,10 @@
 package storage
 
 import (
-	"fmt"
 	"monitarda/tasks"
 	"sync"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type Storage struct {
@@ -34,12 +35,12 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 			case result, ok := <-inputChan:
 				{
 					if !ok {
-						fmt.Println("Input channel has been closed")
+						log.Debugf("Input %d has been closed", descriptor.InputId())
 						break outerLoop
 					}
 
 					if err := s.storeResult(result); err != nil {
-						fmt.Printf("Failed to store result: %s", result.Value())
+						log.Errorf("Failed to store result: %s", result.Value())
 						break outerLoop
 					}
 				}
@@ -50,7 +51,7 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 			}
 		}
 
-		fmt.Printf("Input %d has finished the job\n", descriptor.InputId())
+		log.Infof("Input %d has finished the job", descriptor.InputId())
 		delete(s.stoppers, descriptor.InputId())
 		s.waitGroup.Done()
 	}()
@@ -59,7 +60,7 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 }
 
 func (s *Storage) storeResult(result tasks.Result) error {
-	fmt.Printf("Store: %s\n", result.Value())
+	log.Debugf("Store: %s", result.Value())
 	return nil
 }
 
@@ -70,7 +71,7 @@ func (s *Storage) RemoveInput(inputId uint64) {
 	stopper, ok := s.stoppers[inputId]
 
 	if !ok {
-		fmt.Printf("InputId %d not found", inputId)
+		log.Warnf("InputId %d not found", inputId)
 		return
 	}
 
