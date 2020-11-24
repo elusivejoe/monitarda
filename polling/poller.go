@@ -1,10 +1,10 @@
 package polling
 
 import (
-	"monitarda/tasks"
 	"sync"
 	"time"
 
+	"github.com/elusivejoe/monitarda/tasks"
 	log "github.com/sirupsen/logrus"
 )
 

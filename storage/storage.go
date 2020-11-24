@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"monitarda/tasks"
 	"sync"
 
+	"github.com/elusivejoe/monitarda/tasks"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -1,10 +1,10 @@
 package polling
 
 import (
-	"monitarda/tasks"
 	"testing"
 	"time"
 
+	"github.com/elusivejoe/monitarda/tasks"
 	"github.com/stretchr/testify/assert"
 )
 

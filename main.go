@@ -1,10 +1,11 @@
 package main
 
 import (
-	"monitarda/polling"
-	"monitarda/storage"
-	"monitarda/tasks"
 	"time"
+
+	"github.com/elusivejoe/monitarda/polling"
+	"github.com/elusivejoe/monitarda/storage"
+	"github.com/elusivejoe/monitarda/tasks"
 )
 
 func main() {
