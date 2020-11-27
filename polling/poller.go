@@ -1,6 +1,7 @@
 package polling
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -34,6 +35,8 @@ func (p *Poller) Poll(task tasks.Task, repeat Repeat, duration time.Duration) Ta
 
 	descriptor := newDescriptor(repeat, duration, results)
 
+	log.Infof("Poll task: %s", descriptor)
+
 	p.runRoutine(task, descriptor, stopper, results)
 	p.tasks[descriptor.taskId] = &polledTask{task: task, descriptor: descriptor, stopper: stopper}
 
@@ -51,7 +54,7 @@ func (p *Poller) runRoutine(t tasks.Task, descriptor TaskDescriptor, stopper cha
 			select {
 			case <-ticker.C:
 				if result, err := t.Fire(); err != nil {
-					log.Errorf("Task %d returned an error: %s", descriptor.taskId, err)
+					log.Errorf("Task (%s) returned an error: %s", descriptor, err)
 					break outerLoop
 				} else {
 					select {
@@ -68,7 +71,7 @@ func (p *Poller) runRoutine(t tasks.Task, descriptor TaskDescriptor, stopper cha
 			}
 		}
 
-		log.Infof("Task %d finished", descriptor.taskId)
+		log.Infof("Task finished: %s", descriptor)
 
 		ticker.Stop()
 		close(results)
@@ -78,18 +81,21 @@ func (p *Poller) runRoutine(t tasks.Task, descriptor TaskDescriptor, stopper cha
 	}()
 }
 
-func (p *Poller) Unpoll(id uint64) {
+func (p *Poller) Unpoll(id uint64) error {
 	pollMutex.Lock()
 	defer pollMutex.Unlock()
+
+	log.Debugf("Unpoll task: Id: %d", id)
 
 	task, ok := p.tasks[id]
 
 	if !ok {
-		log.Warnf("TaskId %d not found", id)
-		return
+		return fmt.Errorf("task with Id %d not found", id)
 	}
 
 	task.stopper <- true
+
+	return nil
 }
 
 func (p *Poller) cleanUpTask(id uint64) {

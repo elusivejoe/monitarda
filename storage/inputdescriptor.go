@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -24,6 +25,10 @@ func newDescriptor() InputDescriptor {
 	return InputDescriptor{inputId: generateId()}
 }
 
-func (wd InputDescriptor) InputId() uint64 {
-	return wd.inputId
+func (inDesc InputDescriptor) InputId() uint64 {
+	return inDesc.inputId
+}
+
+func (inDesc InputDescriptor) String() string {
+	return fmt.Sprintf("Id: %d", inDesc.InputId())
 }

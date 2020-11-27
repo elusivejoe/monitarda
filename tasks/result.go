@@ -11,3 +11,7 @@ func (r *Result) Value() string {
 func (r *Result) SetValue(newVal string) {
 	r.value = newVal
 }
+
+func (r *Result) String() string {
+	return r.Value()
+}

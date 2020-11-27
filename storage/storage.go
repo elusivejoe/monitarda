@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/elusivejoe/monitarda/tasks"
@@ -25,6 +26,8 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 	s.waitGroup.Add(1)
 	descriptor := newDescriptor()
 
+	log.Infof("Add input: %s", descriptor)
+
 	stopper := make(chan bool)
 	s.stoppers[descriptor.InputId()] = stopper
 
@@ -35,12 +38,12 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 			case result, ok := <-inputChan:
 				{
 					if !ok {
-						log.Debugf("Input %d has been closed", descriptor.InputId())
+						log.Debugf("Input has been closed: %s", descriptor)
 						break outerLoop
 					}
 
 					if err := s.storeResult(result); err != nil {
-						log.Errorf("Failed to store result: %s", result.Value())
+						log.Errorf("Input: %s Failed to store result: %s", descriptor, err)
 						break outerLoop
 					}
 				}
@@ -51,7 +54,7 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 			}
 		}
 
-		log.Infof("Input %d has finished the job", descriptor.InputId())
+		log.Infof("Input %s has finished the job", descriptor)
 		delete(s.stoppers, descriptor.InputId())
 		s.waitGroup.Done()
 	}()
@@ -60,23 +63,24 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 }
 
 func (s *Storage) storeResult(result tasks.Result) error {
-	log.Debugf("Store: %s", result.Value())
+	log.Debugf("Store: %s", result)
 	return nil
 }
 
-func (s *Storage) RemoveInput(inputId uint64) {
+func (s *Storage) RemoveInput(inputId uint64) error {
 	storageMutex.Lock()
 	defer storageMutex.Unlock()
 
 	stopper, ok := s.stoppers[inputId]
 
 	if !ok {
-		log.Warnf("InputId %d not found", inputId)
-		return
+		return fmt.Errorf("input with Id %d not found", inputId)
 	}
 
 	stopper <- true
 	delete(s.stoppers, inputId)
+
+	return nil
 }
 
 func (s *Storage) WaitAll() {

@@ -1,6 +1,7 @@
 package polling
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -44,4 +45,8 @@ func (td TaskDescriptor) Repeat() Repeat {
 
 func (td TaskDescriptor) Duration() time.Duration {
 	return td.duration
+}
+
+func (td TaskDescriptor) String() string {
+	return fmt.Sprintf("Id: %d Repeat: %s, Duration: %s", td.TaskId(), td.Repeat(), td.Duration())
 }
