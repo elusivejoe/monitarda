@@ -3,12 +3,17 @@ package main
 import (
 	"time"
 
+	"github.com/elusivejoe/monitarda/logging"
 	"github.com/elusivejoe/monitarda/polling"
 	"github.com/elusivejoe/monitarda/storage"
 	"github.com/elusivejoe/monitarda/tasks"
 )
 
+var logger = logging.GetLogger()
+
 func main() {
+	logger.Info("The program has started")
+
 	poller := polling.NewPoller()
 	resultsStorage := storage.NewStorage()
 
@@ -28,4 +33,6 @@ func main() {
 
 	poller.WaitAll()
 	resultsStorage.WaitAll()
+
+	logger.Info("The program has finished")
 }

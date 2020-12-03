@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/elusivejoe/monitarda/logging"
 	"github.com/elusivejoe/monitarda/tasks"
-	log "github.com/sirupsen/logrus"
 )
 
 type polledTask struct {
@@ -19,6 +19,8 @@ type Poller struct {
 	tasks     map[uint64]*polledTask
 	waitGroup sync.WaitGroup
 }
+
+var logger = logging.GetLogger()
 
 func NewPoller() *Poller {
 	return &Poller{tasks: make(map[uint64]*polledTask)}
@@ -35,7 +37,7 @@ func (p *Poller) Poll(task tasks.Task, repeat Repeat, duration time.Duration) Ta
 
 	descriptor := newDescriptor(repeat, duration, results)
 
-	log.Infof("Poll task: %s", descriptor)
+	logger.Infof("Poll task: %s", descriptor)
 
 	p.runRoutine(task, descriptor, stopper, results)
 	p.tasks[descriptor.taskId] = &polledTask{task: task, descriptor: descriptor, stopper: stopper}
@@ -54,7 +56,7 @@ func (p *Poller) runRoutine(t tasks.Task, descriptor TaskDescriptor, stopper cha
 			select {
 			case <-ticker.C:
 				if result, err := t.Fire(); err != nil {
-					log.Errorf("Task (%s) returned an error: %s", descriptor, err)
+					logger.Errorf("Task (%s) returned an error: %s", descriptor, err)
 					break outerLoop
 				} else {
 					select {
@@ -71,7 +73,7 @@ func (p *Poller) runRoutine(t tasks.Task, descriptor TaskDescriptor, stopper cha
 			}
 		}
 
-		log.Infof("Task finished: %s", descriptor)
+		logger.Infof("Task finished: %s", descriptor)
 
 		ticker.Stop()
 		close(results)
@@ -85,7 +87,7 @@ func (p *Poller) Unpoll(id uint64) error {
 	pollMutex.Lock()
 	defer pollMutex.Unlock()
 
-	log.Debugf("Unpoll task: Id: %d", id)
+	logger.Debugf("Unpoll task: Id: %d", id)
 
 	task, ok := p.tasks[id]
 

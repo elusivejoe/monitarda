@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/elusivejoe/monitarda/logging"
 	"github.com/elusivejoe/monitarda/tasks"
-	log "github.com/sirupsen/logrus"
 )
 
 type Storage struct {
@@ -14,6 +14,7 @@ type Storage struct {
 }
 
 var storageMutex sync.Mutex
+var logger = logging.GetLogger()
 
 func NewStorage() *Storage {
 	return &Storage{stoppers: make(map[uint64]chan bool)}
@@ -26,7 +27,7 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 	s.waitGroup.Add(1)
 	descriptor := newDescriptor()
 
-	log.Infof("Add input: %s", descriptor)
+	logger.Infof("Add input: %s", descriptor)
 
 	stopper := make(chan bool)
 	s.stoppers[descriptor.InputId()] = stopper
@@ -38,12 +39,12 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 			case result, ok := <-inputChan:
 				{
 					if !ok {
-						log.Debugf("Input has been closed: %s", descriptor)
+						logger.Debugf("Input has been closed: %s", descriptor)
 						break outerLoop
 					}
 
 					if err := s.storeResult(result); err != nil {
-						log.Errorf("Input: %s Failed to store result: %s", descriptor, err)
+						logger.Errorf("Input: %s Failed to store result: %s", descriptor, err)
 						break outerLoop
 					}
 				}
@@ -54,7 +55,7 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 			}
 		}
 
-		log.Infof("Input %s has finished the job", descriptor)
+		logger.Infof("Input %s has finished the job", descriptor)
 		delete(s.stoppers, descriptor.InputId())
 		s.waitGroup.Done()
 	}()
@@ -63,7 +64,7 @@ func (s *Storage) AddInput(inputChan <-chan tasks.Result) InputDescriptor {
 }
 
 func (s *Storage) storeResult(result tasks.Result) error {
-	log.Debugf("Store: %s", result)
+	logger.Debugf("Store: %s", result)
 	return nil
 }
 
