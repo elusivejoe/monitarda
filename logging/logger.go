@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"fmt"
 	"os"
 	"sync"
 
@@ -11,25 +10,20 @@ import (
 var once sync.Once
 var logger *logrus.Logger
 
+//TODO: Find a better way to configure the logger (.conf file?); no need to allow to configure it from anywhere
+func Configure(conf logConfig) {
+	logger := GetLogger()
+	logger.SetLevel(conf.level)
+	logger.SetOutput(conf.output)
+}
+
 func GetLogger() *logrus.Logger {
 	once.Do(func() {
 		logger = &logrus.Logger{
-			Hooks:        nil,
-			ReportCaller: false,
-			ExitFunc:     nil,
+			Formatter: &logrus.TextFormatter{},
+			Level:     logrus.DebugLevel,
+			Out:       os.Stdout,
 		}
-
-		logger.SetLevel(logrus.InfoLevel)
-		logger.SetFormatter(&logrus.TextFormatter{})
-
-		logfile, err := os.OpenFile("monitarda.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
-
-		if err != nil {
-			fmt.Printf("error opening log file: %v", err)
-			return
-		}
-
-		logger.SetOutput(logfile)
 	})
 
 	return logger
